@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1c1f2e">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>My Apps</title>
+<style>
+  :root {
+    --bg: #14161f;
+    --panel: #1c1f2e;
+    --panel-2: #242838;
+    --ink: #f0f1f5;
+    --sub: #9297ab;
+    --line: #2f3346;
+    --amber: #f5a524;
+    --amber-soft: rgba(245, 165, 36, 0.14);
+    --danger: #f4574f;
+    --ok: #22c55e;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  #app { min-height: 100%; }
+
+  /* ---------- Auth screen ---------- */
+  .auth-screen {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .auth-mark {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 10px;
+    background: var(--panel);
+    margin: 0 auto 20px;
+  }
+  .auth-mark span { border-radius: 6px; }
+  .auth-mark span:nth-child(1) { background: #f5a524; }
+  .auth-mark span:nth-child(2) { background: #6366f1; }
+  .auth-mark span:nth-child(3) { background: #22c55e; }
+  .auth-mark span:nth-child(4) { background: #f43f5e; }
+  .auth-card {
+    width: 100%;
+    max-width: 340px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 26px;
+  }
+  .auth-card h1 { font-size: 19px; margin: 0 0 4px; text-align: center; }
+  .auth-card .sub { color: var(--sub); font-size: 13px; text-align: center; margin: 0 0 22px; }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12.5px; color: var(--sub); margin-bottom: 6px; }
+  .field input {
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    padding: 11px 13px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--ink);
+    outline: none;
+  }
+  .field input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+  .auth-btn {
+    width: 100%;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: var(--amber);
+    color: #201400;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .auth-switch {
+    text-align: center;
+    font-size: 13px;
+    color: var(--sub);
+    margin-top: 16px;
+  }
+  .auth-switch button {
+    background: none; border: none; color: var(--amber);
+    font: inherit; font-size: 13px; cursor: pointer; padding: 0;
+  }
+  .auth-status { font-size: 13px; text-align: center; margin-top: 14px; min-height: 18px; }
+  .auth-status.error { color: var(--danger); }
+  .auth-status.ok { color: var(--ok); }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--line);
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  header h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+  .head-right { display: flex; align-items: center; gap: 10px; }
+  .chip {
+    font-size: 12px;
+    color: var(--sub);
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 6px 10px;
+    border-radius: 999px;
+  }
+  .btn {
+    font: inherit;
+    font-size: 13px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .btn:hover { border-color: var(--amber); }
+  .btn.primary { background: var(--amber); border-color: var(--amber); color: #201400; font-weight: 600; }
+  .btn.ok { background: var(--ok); border-color: var(--ok); color: #062b13; font-weight: 600; }
+  .btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
+  .btn.small { padding: 5px 10px; font-size: 12px; }
+
+  main { max-width: 980px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  .search-row { margin-bottom: 20px; }
+  #search {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--panel);
+    color: var(--ink);
+    outline: none;
+  }
+  #search:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+    gap: 14px;
+  }
+  .tile {
+    position: relative;
+    display: block;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  .tile:hover { border-color: var(--amber); }
+  .tile .icon {
+    font-size: 26px;
+    width: 46px; height: 46px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--amber-soft);
+    border-radius: 12px;
+    margin-bottom: 12px;
+  }
+  .tile .name { font-weight: 600; font-size: 15px; margin-bottom: 3px; }
+  .tile .desc { font-size: 12.5px; color: var(--sub); line-height: 1.4; }
+
+  .empty { text-align: center; color: var(--sub); padding: 60px 0; font-size: 14px; }
+
+  /* ---------- Admin panel ---------- */
+  .admin-section { margin-top: 36px; border-top: 1px solid var(--line); padding-top: 24px; }
+  .admin-section h2 { font-size: 15px; margin: 0 0 4px; }
+  .admin-section .section-sub { font-size: 12.5px; color: var(--sub); margin: 0 0 14px; }
+  .admin-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .admin-row {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .admin-row .meta { color: var(--sub); font-size: 12px; }
+  .admin-row .actions { display: flex; gap: 6px; }
+  .form-grid {
+    display: grid;
+    grid-template-columns: 70px 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .form-grid input {
+    font: inherit;
+    font-size: 13px;
+    padding: 9px 11px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    color: var(--ink);
+    outline: none;
+  }
+  .form-grid input:focus { border-color: var(--amber); }
+  .form-actions { display: flex; gap: 8px; margin-bottom: 26px; }
+  .role-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: var(--amber-soft);
+    color: var(--amber);
+  }
+  .pending-tag {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(244, 87, 79, 0.14);
+    color: var(--danger);
+  }
+  .toast {
+    position: fixed;
+    bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 20;
+    max-width: 90vw;
+    text-align: center;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div class="toast" id="toast"></div>
+<script src="app.js"></script>
+</body>
+</html>
