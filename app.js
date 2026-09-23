@@ -16,8 +16,10 @@ let state = {
   apps: [],
   users: [],
   adminOpen: false,
-  authMode: 'login' // 'login' | 'signup'
+  authMode: 'login', // 'login' | 'signup'
+  editingAppId: null
 };
+let pendingEditThumbDataUrl = null;
 
 const appEl = document.getElementById('app');
 const toastEl = document.getElementById('toast');
@@ -102,12 +104,18 @@ function renderAuth(statusMsg, statusIsError) {
         </div>
         <div class="field">
           <label>Password</label>
-          <input id="fPassword" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" placeholder="At least 6 characters">
+          <div class="pw-wrap">
+            <input id="fPassword" type="password" autocomplete="${isSignup ? 'new-password' : 'current-password'}" placeholder="At least 6 characters">
+            <button type="button" class="pw-toggle" data-toggle-for="fPassword">Show</button>
+          </div>
         </div>
         ${isSignup ? `
         <div class="field">
           <label>Confirm password</label>
-          <input id="fPassword2" type="password" autocomplete="new-password" placeholder="Re-enter password">
+          <div class="pw-wrap">
+            <input id="fPassword2" type="password" autocomplete="new-password" placeholder="Re-enter password">
+            <button type="button" class="pw-toggle" data-toggle-for="fPassword2">Show</button>
+          </div>
         </div>` : ''}
 
         <button class="auth-btn" id="authSubmitBtn">${isSignup ? 'Request access' : 'Sign in'}</button>
@@ -124,6 +132,14 @@ function renderAuth(statusMsg, statusIsError) {
     renderAuth();
   };
   document.getElementById('authSubmitBtn').onclick = isSignup ? submitSignup : submitLogin;
+  appEl.querySelectorAll('.pw-toggle').forEach(btn => {
+    btn.onclick = () => {
+      const inp = document.getElementById(btn.getAttribute('data-toggle-for'));
+      const showing = inp.type === 'text';
+      inp.type = showing ? 'password' : 'text';
+      btn.textContent = showing ? 'Show' : 'Hide';
+    };
+  });
   // Enter key submits
   appEl.querySelectorAll('.auth-card input').forEach(inp => {
     inp.addEventListener('keydown', e => { if (e.key === 'Enter') (isSignup ? submitSignup : submitLogin)(); });
@@ -230,9 +246,9 @@ function renderGrid() {
   const grid = document.getElementById('grid');
   const filtered = state.apps.filter(a => a.name.toLowerCase().includes(q));
   document.getElementById('emptyMsg').style.display = filtered.length ? 'none' : 'block';
-  grid.innerHTML = filtered.map(a => `
-    <a class="tile" href="${escapeAttr(a.url)}" target="_blank" rel="noopener">
-      <div class="icon">${escapeHtml(a.icon || '🔗')}</div>
+  grid.innerHTML = filtered.map((a, i) => `
+    <a class="tile" style="animation-delay:${Math.min(i * 40, 400)}ms" href="${escapeAttr(a.url)}" target="_blank" rel="noopener">
+      <div class="icon">${a.thumbnail ? `<img src="${escapeAttr(a.thumbnail)}" alt="">` : escapeHtml(a.icon || '🔗')}</div>
       <div class="name">${escapeHtml(a.name)}</div>
       <div class="desc">${escapeHtml(a.description || '')}</div>
     </a>
@@ -264,10 +280,13 @@ function renderAdminPanel() {
     <div class="admin-section">
       <h2>Apps</h2>
       <div class="admin-list">
-        ${state.apps.map(a => `
+        ${state.apps.map(a => a.id === state.editingAppId ? renderAppEditRow(a) : `
           <div class="admin-row" data-id="${a.id}">
-            <span>${escapeHtml(a.icon || '🔗')} <strong>${escapeHtml(a.name)}</strong> <span class="meta">${escapeHtml(a.description || '')}</span></span>
-            <button class="btn small danger" data-delete-app="${a.id}">Remove</button>
+            <span>${a.thumbnail ? `<img src="${escapeAttr(a.thumbnail)}" alt="" style="width:20px;height:20px;border-radius:5px;object-fit:cover;vertical-align:-4px;margin-right:4px;">` : escapeHtml(a.icon || '🔗')} <strong>${escapeHtml(a.name)}</strong> <span class="meta">${escapeHtml(a.description || '')}</span></span>
+            <span class="actions">
+              <button class="btn small" data-edit-app="${a.id}">Edit</button>
+              <button class="btn small danger" data-delete-app="${a.id}">Remove</button>
+            </span>
           </div>
         `).join('') || '<div class="meta">No apps yet — add one below.</div>'}
       </div>
@@ -278,6 +297,11 @@ function renderAdminPanel() {
       </div>
       <div class="form-grid" style="grid-template-columns: 1fr;">
         <input id="newDesc" placeholder="Short description (optional)">
+      </div>
+      <div class="thumb-row">
+        <div class="thumb-preview" id="thumbPreview">No image</div>
+        <label class="thumb-file-label" for="newThumbFile">Choose thumbnail image (optional)</label>
+        <input type="file" id="newThumbFile" accept="image/*" style="display:none;">
       </div>
       <div class="form-actions">
         <button class="btn primary" id="addAppBtn">Add app</button>
@@ -303,16 +327,89 @@ function renderAdminPanel() {
   `;
 }
 
+let pendingThumbDataUrl = null;
+
+function resizeImageToDataUrl(file, maxSize) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const w = Math.round(img.width * scale);
+        const h = Math.round(img.height * scale);
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        resolve(canvas.toDataURL('image/png', 0.9));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderAppEditRow(a) {
+  return `
+    <div class="admin-row" style="flex-direction:column; align-items:stretch; background:var(--panel-2);" data-editing="${a.id}">
+      <div class="form-grid">
+        <input id="editIcon" value="${escapeAttr(a.icon || '')}" placeholder="🔗" maxlength="4">
+        <input id="editName" value="${escapeAttr(a.name || '')}" placeholder="App name">
+        <input id="editUrl" value="${escapeAttr(a.url || '')}" placeholder="App URL (https://...)">
+      </div>
+      <div class="form-grid" style="grid-template-columns: 1fr;">
+        <input id="editDesc" value="${escapeAttr(a.description || '')}" placeholder="Short description (optional)">
+      </div>
+      <div class="thumb-row">
+        <div class="thumb-preview" id="editThumbPreview">${a.thumbnail ? `<img src="${escapeAttr(a.thumbnail)}" alt="">` : 'No image'}</div>
+        <label class="thumb-file-label" for="editThumbFile">Change thumbnail image</label>
+        <input type="file" id="editThumbFile" accept="image/*" style="display:none;">
+      </div>
+      <div class="form-actions" style="margin-bottom:4px;">
+        <button class="btn primary" id="saveEditBtn">Save changes</button>
+        <button class="btn" id="cancelEditBtn">Cancel</button>
+      </div>
+    </div>
+  `;
+}
+
 function wireAdminPanel() {
+  const thumbFileInput = document.getElementById('newThumbFile');
+  if (thumbFileInput) {
+    thumbFileInput.onchange = async () => {
+      const file = thumbFileInput.files[0];
+      if (!file) return;
+      const dataUrl = await resizeImageToDataUrl(file, 160);
+      pendingThumbDataUrl = dataUrl;
+      document.getElementById('thumbPreview').innerHTML = `<img src="${dataUrl}" alt="">`;
+    };
+  }
+
   document.getElementById('addAppBtn').onclick = async () => {
     const name = document.getElementById('newName').value.trim();
     const url = document.getElementById('newUrl').value.trim();
     const icon = document.getElementById('newIcon').value.trim() || '🔗';
     const description = document.getElementById('newDesc').value.trim();
     if (!name || !url) { toast('Name and URL are required'); return; }
-    await apiGet('addApp', { name, url, icon, description });
-    toast('App added');
-    await refreshApps();
+    const addBtn = document.getElementById('addAppBtn');
+    addBtn.textContent = 'Adding...'; addBtn.disabled = true;
+    try {
+      let thumbnail = '';
+      if (pendingThumbDataUrl) {
+        const upload = await apiPost('uploadThumbnail', { dataUrl: pendingThumbDataUrl });
+        if (upload.error) { toast('Image upload failed: ' + upload.error); }
+        else thumbnail = upload.url;
+      }
+      await apiGet('addApp', { name, url, icon, description, thumbnail });
+      pendingThumbDataUrl = null;
+      toast('App added');
+      await refreshApps();
+    } catch (err) {
+      toast('Could not add app');
+      addBtn.textContent = 'Add app'; addBtn.disabled = false;
+    }
   };
 
   document.querySelectorAll('[data-delete-app]').forEach(btn => {
@@ -323,6 +420,61 @@ function wireAdminPanel() {
       await refreshApps();
     };
   });
+
+  document.querySelectorAll('[data-edit-app]').forEach(btn => {
+    btn.onclick = () => {
+      state.editingAppId = btn.getAttribute('data-edit-app');
+      pendingEditThumbDataUrl = null;
+      renderMain();
+    };
+  });
+
+  const editThumbFileInput = document.getElementById('editThumbFile');
+  if (editThumbFileInput) {
+    editThumbFileInput.onchange = async () => {
+      const file = editThumbFileInput.files[0];
+      if (!file) return;
+      const dataUrl = await resizeImageToDataUrl(file, 160);
+      pendingEditThumbDataUrl = dataUrl;
+      document.getElementById('editThumbPreview').innerHTML = `<img src="${dataUrl}" alt="">`;
+    };
+  }
+  const cancelEditBtn = document.getElementById('cancelEditBtn');
+  if (cancelEditBtn) {
+    cancelEditBtn.onclick = () => {
+      state.editingAppId = null;
+      pendingEditThumbDataUrl = null;
+      renderMain();
+    };
+  }
+  const saveEditBtn = document.getElementById('saveEditBtn');
+  if (saveEditBtn) {
+    saveEditBtn.onclick = async () => {
+      const id = state.editingAppId;
+      const name = document.getElementById('editName').value.trim();
+      const url = document.getElementById('editUrl').value.trim();
+      const icon = document.getElementById('editIcon').value.trim() || '🔗';
+      const description = document.getElementById('editDesc').value.trim();
+      if (!name || !url) { toast('Name and URL are required'); return; }
+      saveEditBtn.textContent = 'Saving...'; saveEditBtn.disabled = true;
+      try {
+        const params = { id, name, url, icon, description };
+        if (pendingEditThumbDataUrl) {
+          const upload = await apiPost('uploadThumbnail', { dataUrl: pendingEditThumbDataUrl });
+          if (upload.error) toast('Image upload failed: ' + upload.error);
+          else params.thumbnail = upload.url;
+        }
+        await apiGet('updateApp', params);
+        state.editingAppId = null;
+        pendingEditThumbDataUrl = null;
+        toast('App updated');
+        await refreshApps();
+      } catch (err) {
+        toast('Could not save changes');
+        saveEditBtn.textContent = 'Save changes'; saveEditBtn.disabled = false;
+      }
+    };
+  }
 
   document.querySelectorAll('[data-approve]').forEach(btn => {
     btn.onclick = async () => {

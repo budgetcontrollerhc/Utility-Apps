@@ -7,31 +7,36 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <title>My Apps</title>
 <style>
   :root {
-    --bg: #14161f;
-    --panel: #1c1f2e;
-    --panel-2: #242838;
-    --ink: #f0f1f5;
-    --sub: #9297ab;
-    --line: #2f3346;
+    --bg: #12141d;
+    --panel: #1b1e2b;
+    --panel-2: #232739;
+    --ink: #f3f4f8;
+    --sub: #979dB4;
+    --line: #2b2f42;
     --amber: #f5a524;
+    --amber-2: #ffcf6b;
     --amber-soft: rgba(245, 165, 36, 0.14);
     --danger: #f4574f;
-    --ok: #22c55e;
+    --ok: #2fd484;
   }
   * { box-sizing: border-box; }
   html, body {
     height: 100%;
     margin: 0;
-    background: var(--bg);
+    background: radial-gradient(circle at 20% -10%, #232946 0%, var(--bg) 45%);
     color: var(--ink);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   #app { min-height: 100%; }
+  @keyframes riseIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
   /* ---------- Auth screen ---------- */
   .auth-screen {
@@ -51,6 +56,7 @@
     padding: 10px;
     background: var(--panel);
     margin: 0 auto 20px;
+    box-shadow: 0 10px 30px rgba(245, 165, 36, 0.15);
   }
   .auth-mark span { border-radius: 6px; }
   .auth-mark span:nth-child(1) { background: #f5a524; }
@@ -62,13 +68,15 @@
     max-width: 340px;
     background: var(--panel);
     border: 1px solid var(--line);
-    border-radius: 18px;
-    padding: 26px;
+    border-radius: 20px;
+    padding: 28px;
+    animation: riseIn 0.4s ease;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.35);
   }
-  .auth-card h1 { font-size: 19px; margin: 0 0 4px; text-align: center; }
+  .auth-card h1 { font-size: 20px; font-weight: 800; margin: 0 0 4px; text-align: center; letter-spacing: -0.02em; }
   .auth-card .sub { color: var(--sub); font-size: 13px; text-align: center; margin: 0 0 22px; }
   .field { margin-bottom: 12px; }
-  .field label { display: block; font-size: 12.5px; color: var(--sub); margin-bottom: 6px; }
+  .field label { display: block; font-size: 12.5px; color: var(--sub); margin-bottom: 6px; font-weight: 500; }
   .field input {
     width: 100%;
     font: inherit;
@@ -79,21 +87,38 @@
     background: var(--panel-2);
     color: var(--ink);
     outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   .field input:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
+  .pw-wrap { position: relative; }
+  .pw-wrap input { padding-right: 42px; }
+  .pw-toggle {
+    position: absolute;
+    right: 6px; top: 50%;
+    transform: translateY(-50%);
+    background: none; border: none;
+    color: var(--sub);
+    font-size: 12.5px;
+    cursor: pointer;
+    padding: 6px 8px;
+    border-radius: 6px;
+  }
+  .pw-toggle:hover { color: var(--amber); }
   .auth-btn {
     width: 100%;
     font: inherit;
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 14.5px;
+    font-weight: 700;
     padding: 12px;
     border-radius: 10px;
     border: none;
-    background: var(--amber);
+    background: linear-gradient(135deg, var(--amber-2), var(--amber));
     color: #201400;
     cursor: pointer;
     margin-top: 6px;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
+  .auth-btn:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(245, 165, 36, 0.25); }
   .auth-switch {
     text-align: center;
     font-size: 13px;
@@ -117,8 +142,9 @@
     border-bottom: 1px solid var(--line);
     gap: 12px;
     flex-wrap: wrap;
+    backdrop-filter: blur(6px);
   }
-  header h1 { font-size: 18px; margin: 0; letter-spacing: -0.01em; }
+  header h1 { font-size: 19px; font-weight: 800; margin: 0; letter-spacing: -0.02em; }
   .head-right { display: flex; align-items: center; gap: 10px; }
   .chip {
     font-size: 12px;
@@ -131,15 +157,17 @@
   .btn {
     font: inherit;
     font-size: 13px;
+    font-weight: 500;
     padding: 8px 14px;
     border-radius: 10px;
     border: 1px solid var(--line);
     background: var(--panel);
     color: var(--ink);
     cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease;
   }
-  .btn:hover { border-color: var(--amber); }
-  .btn.primary { background: var(--amber); border-color: var(--amber); color: #201400; font-weight: 600; }
+  .btn:hover { border-color: var(--amber); transform: translateY(-1px); }
+  .btn.primary { background: linear-gradient(135deg, var(--amber-2), var(--amber)); border-color: var(--amber); color: #201400; font-weight: 700; }
   .btn.ok { background: var(--ok); border-color: var(--ok); color: #062b13; font-weight: 600; }
   .btn.danger { color: var(--danger); border-color: var(--danger); background: transparent; }
   .btn.small { padding: 5px 10px; font-size: 12px; }
@@ -156,6 +184,7 @@
     background: var(--panel);
     color: var(--ink);
     outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
   }
   #search:focus { border-color: var(--amber); box-shadow: 0 0 0 3px var(--amber-soft); }
 
@@ -174,17 +203,21 @@
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+    animation: riseIn 0.35s ease backwards;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
   }
-  .tile:hover { border-color: var(--amber); }
+  .tile:hover { border-color: var(--amber); transform: translateY(-4px); box-shadow: 0 16px 30px rgba(0,0,0,0.3); }
   .tile .icon {
     font-size: 26px;
-    width: 46px; height: 46px;
+    width: 48px; height: 48px;
     display: flex; align-items: center; justify-content: center;
     background: var(--amber-soft);
-    border-radius: 12px;
+    border-radius: 13px;
     margin-bottom: 12px;
+    overflow: hidden;
   }
-  .tile .name { font-weight: 600; font-size: 15px; margin-bottom: 3px; }
+  .tile .icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 13px; }
+  .tile .name { font-weight: 700; font-size: 15px; margin-bottom: 3px; }
   .tile .desc { font-size: 12.5px; color: var(--sub); line-height: 1.4; }
 
   .empty { text-align: center; color: var(--sub); padding: 60px 0; font-size: 14px; }
@@ -223,6 +256,30 @@
     outline: none;
   }
   .form-grid input:focus { border-color: var(--amber); }
+  .thumb-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .thumb-preview {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    background: var(--panel-2);
+    border: 1px dashed var(--line);
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--sub);
+    text-align: center;
+  }
+  .thumb-preview img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb-file-label {
+    font-size: 12.5px;
+    color: var(--sub);
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    padding: 9px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .thumb-file-label:hover { border-color: var(--amber); color: var(--ink); }
   .form-actions { display: flex; gap: 8px; margin-bottom: 26px; }
   .role-tag {
     font-size: 11px;
